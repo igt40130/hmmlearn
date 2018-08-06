@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import linalg
+from scipy.special import gammaln
 
 
 def log_multivariate_normal_density(X, means, covars, covariance_type='diag'):
@@ -88,3 +89,15 @@ def _log_multivariate_normal_density_full(X, means, covars, min_covar=1.e-7):
                                  n_dim * np.log(2 * np.pi) + cv_log_det)
 
     return log_prob
+
+
+def log_multivariate_poisson_density(X, means) :
+    # modeled on log_multivariate_normal_density from sklearn.mixture
+    n_samples, n_dim = X.shape
+    # -lambda + k log(lambda) - log(k!)
+    log_means = np.where(means > 0, np.log(means), np.log(1e-3))
+    lpr =  np.dot(X, log_means.T)
+    lpr = lpr - np.sum(means,axis=1) # rates for all elements are summed and then broadcast across the observation dimenension
+    log_factorial = np.sum(gammaln(X + 1), axis=1)
+    lpr = lpr - log_factorial[:,None] # logfactobs vector broad cast across the state dimension
+    return lpr
